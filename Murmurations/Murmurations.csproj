@@ -1,0 +1,67 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<LangVersion>Latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<DebugType>none</DebugType>
+		<Platforms>AnyCPU;x64</Platforms>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<TheLongDarkPath>D:\SteamLibrary\steamapps\common\TheLongDark</TheLongDarkPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="Icons\Bird_Icon_1.png" />
+		<None Remove="Icons\Bird_Icon_2.png" />
+		<None Remove="Icons\Bird_Icon_3.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="Waltz.Modding.TLD.Il2CppAssemblies.Windows" Version="2.52.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="System" />
+		<Using Include="System.Reflection" />
+		<Using Include="Il2Cpp" />
+		<Using Include="MelonLoader" />
+		<Using Include="UnityEngine" />
+		<Using Include="ModSettings" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AssemblyName>Murmurations</AssemblyName>
+		<RootNamespace>Murmurations</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="Core.cs" />
+		<Compile Include="ModSettings.cs" />
+		<Compile Include="MurmurationManager.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Icons\Bird_Icon_1.png" />
+		<EmbeddedResource Include="Icons\Bird_Icon_2.png" />
+		<EmbeddedResource Include="Icons\Bird_Icon_3.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="ModSettings">
+			<HintPath>$(TheLongDarkPath)\Mods\ModSettings.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TheLongDarkPath)/Mods" />
+	</Target>
+</Project>
