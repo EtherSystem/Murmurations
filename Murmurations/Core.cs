@@ -1,4 +1,4 @@
-﻿[assembly: MelonInfo(typeof(Murmurations.Core), "Murmurations", "1.0.0", "EtherSystem", null)]
+﻿[assembly: MelonInfo(typeof(Murmurations.Core), "Murmurations", "1.0.1", "EtherSystem", null)]
 [assembly: MelonGame("Hinterland", "TheLongDark")]
 
 namespace Murmurations

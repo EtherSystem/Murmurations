@@ -3,6 +3,16 @@ using Description = ModSettings.DescriptionAttribute;
 
 namespace Murmurations
 {
+    internal enum MurmurationBehaviorProfile
+    {
+        Dynamic,
+        Compact,
+        Spread,
+        Fluid,
+        Aggressive,
+        Chaotic
+    }
+
     internal class MurmurationsModSettings : JsonModSettings
     {
         [Section("General")]
@@ -181,6 +191,11 @@ namespace Murmurations
         [Description("Strength of slow behavior changes used to prevent stable repeated patterns. 0 disables it. Default: 0.9.")]
         [Slider(0f, 3f, 301, NumberFormat = "{0:0.00}")]
         public float ManeuverVariationStrength = 0.9f;
+
+        [Name("Behavior profile")]
+        [Description("Controls the overall flocking style. Dynamic cycles between all profiles automatically. Default: Dynamic.")]
+        [Choice("Dynamic", "Compact", "Spread", "Fluid", "Aggressive", "Chaotic")]
+        public MurmurationBehaviorProfile BehaviorProfile = MurmurationBehaviorProfile.Dynamic;
 
         [Name("Base alpha")]
         [Description("Maximum opacity for normal crow silhouettes. Default: 0.9.")]

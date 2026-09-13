@@ -461,6 +461,7 @@
         private float m_TargetManeuverWeight = 1f;
         private float m_CurrentExpansionBias;
         private float m_TargetExpansionBias;
+        private MurmurationBehaviorProfile m_LastAppliedBehaviorProfile = (MurmurationBehaviorProfile)(-1);
 
         public bool IsDestroyed => m_State == MurmurationLifecycleState.Destroyed;
 
@@ -494,11 +495,13 @@
             int newTargetSimulatedBoidCount = Mathf.Clamp(Settings.options.SimulatedBoidCount, 1, newTargetBoidCount);
             float newFollowerTrailLength = Mathf.Clamp(Settings.options.FollowerTrailLength, 5f, 400f);
             bool newAnimatedCrows = Settings.options.AnimatedCrows;
+            MurmurationBehaviorProfile newBehaviorProfile = Settings.options.BehaviorProfile;
 
             bool boidCountChanged = force || newTargetBoidCount != m_LastAppliedBoidCount;
             bool simulatedCountChanged = force || newTargetSimulatedBoidCount != m_LastAppliedSimulatedBoidCount;
             bool followerTrailLengthChanged = force || Mathf.Abs(newFollowerTrailLength - m_LastAppliedFollowerTrailLength) > 0.01f;
             bool visualMaterialChanged = force || m_Materials == null || newAnimatedCrows != m_LastAppliedAnimatedCrows;
+            bool behaviorProfileChanged = newBehaviorProfile != m_LastAppliedBehaviorProfile;
 
             m_TargetBoidCount = newTargetBoidCount;
             m_TargetSimulatedBoidCount = newTargetSimulatedBoidCount;
@@ -532,6 +535,9 @@
             m_LastAppliedSimulatedBoidCount = m_TargetSimulatedBoidCount;
             m_LastAppliedFollowerTrailLength = newFollowerTrailLength;
             m_LastAppliedAnimatedCrows = newAnimatedCrows;
+            m_LastAppliedBehaviorProfile = newBehaviorProfile;
+
+            if (behaviorProfileChanged) PickNewBehaviorRegime(false);
 
             UpdateVisualAlpha();
         }
@@ -652,7 +658,7 @@
             m_TargetManeuverDirection = direction;
             m_BehaviorTimerSeconds = UnityEngine.Random.Range(BehaviorRegimeMinSeconds, BehaviorRegimeMaxSeconds);
 
-            int mode = UnityEngine.Random.Range(0, 5);
+            int mode = GetBehaviorRegimeMode();
             if (mode == 0)
             {
                 m_TargetAlignmentWeight = 0.55f;
@@ -714,6 +720,24 @@
             m_CurrentNoiseWeight = m_TargetNoiseWeight;
             m_CurrentManeuverWeight = m_TargetManeuverWeight;
             m_CurrentExpansionBias = m_TargetExpansionBias;
+        }
+
+        private static int GetBehaviorRegimeMode()
+        {
+            if (Settings.options == null || Settings.options.BehaviorProfile == MurmurationBehaviorProfile.Dynamic)
+            {
+                return UnityEngine.Random.Range(0, 5);
+            }
+
+            return Settings.options.BehaviorProfile switch
+            {
+                MurmurationBehaviorProfile.Compact => 0,
+                MurmurationBehaviorProfile.Spread => 1,
+                MurmurationBehaviorProfile.Fluid => 2,
+                MurmurationBehaviorProfile.Aggressive => 3,
+                MurmurationBehaviorProfile.Chaotic => 4,
+                _ => UnityEngine.Random.Range(0, 5)
+            };
         }
 
         private void UpdateLifecycle(float elapsedHours)
