@@ -873,6 +873,11 @@
             return Settings.options != null ? Mathf.Clamp(Settings.options.MaxNeighborChecks, 8, 64) : DefaultMaxNeighborChecksPerBoid;
         }
 
+        private static float GetBirdSizeMultiplier()
+        {
+            return Settings.options != null ? Mathf.Clamp(Settings.options.BirdSize, 0.1f, 2f) : 1f;
+        }
+
         private static int GetTransformUpdateStride()
         {
             return Settings.options != null ? Mathf.Clamp(Settings.options.TransformUpdateStride, 1, 4) : 1;
@@ -897,7 +902,7 @@
             boidObject.transform.SetParent(m_Root.transform, true);
             boidObject.transform.position = position;
             float scale = UnityEngine.Random.Range(MinBirdScale, MaxBirdScale);
-            boidObject.transform.localScale = Vector3.one * scale;
+            boidObject.transform.localScale = Vector3.one * scale * GetBirdSizeMultiplier();
 
             MeshFilter meshFilter = boidObject.AddComponent<MeshFilter>();
             meshFilter.sharedMesh = GetSharedQuadMesh();
@@ -1413,7 +1418,8 @@
             }
 
             float flutter = 1f + Mathf.Sin(Time.time * WingFlutterSpeed + boid.Phase) * WingFlutterStrength;
-            boid.Transform.localScale = new Vector3(boid.Scale * flutter, boid.Scale, 1f);
+            float scale = boid.Scale * GetBirdSizeMultiplier();
+            boid.Transform.localScale = new Vector3(scale * flutter, scale, 1f);
         }
 
         private void RebuildSpatialGrid(float cellSize)

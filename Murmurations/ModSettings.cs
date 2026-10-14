@@ -218,6 +218,11 @@ namespace Murmurations
         [Slider(0.05f, 1f, 96, NumberFormat = "{0:0.00}")]
         public float BaseAlpha = 0.9f;
 
+        [Name("Bird size")]
+        [Description("Size multiplier for the birds. 1.0 is about the size of the crows in the game, 0.2 is closer to real starlings. Default: 1.0.")]
+        [Slider(0.1f, 2f, 39, NumberFormat = "{0:0.00}x")]
+        public float BirdSize = 1f;
+
         [Name("Crow animation")]
         [Description("No animations uses a single bird icon. Static plays a three frames wing animation with every crow facing the same way. Directional plays the same animation and turns each crow towards the direction it is flying. Default: No animations.")]
         [Choice("No animations", "Static", "Directional")]
