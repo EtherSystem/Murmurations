@@ -13,6 +13,13 @@ namespace Murmurations
         Chaotic
     }
 
+    internal enum CrowAnimationStyle
+    {
+        NoAnimations,
+        Static,
+        Directional
+    }
+
     internal class MurmurationsModSettings : JsonModSettings
     {
         [Section("General")]
@@ -202,9 +209,13 @@ namespace Murmurations
         [Slider(0.05f, 1f, 96, NumberFormat = "{0:0.00}")]
         public float BaseAlpha = 0.9f;
 
-        [Name("Animated crows")]
-        [Description("Uses a three frames animation or a single bird icon.")]
-        public bool AnimatedCrows = false;
+        [Name("Crow animation")]
+        [Description("No animations uses a single bird icon. Static plays a three frames wing animation with every crow facing the same way. Directional plays the same animation and turns each crow towards the direction it is flying. Default: No animations.")]
+        [Choice("No animations", "Static", "Directional")]
+        public CrowAnimationStyle CrowAnimation = CrowAnimationStyle.NoAnimations;
+
+        internal bool AnimatedCrows => CrowAnimation != CrowAnimationStyle.NoAnimations;
+        internal bool DirectionalCrows => CrowAnimation == CrowAnimationStyle.Directional;
 
         [Section("Advanced")]
 

@@ -1366,17 +1366,23 @@
         private void UpdateBillboardTransform(ref BoidData boid, Camera viewerCamera, Vector3 viewerPosition)
         {
             boid.Transform.position = boid.Position;
+            bool directional = Settings.options != null && Settings.options.DirectionalCrows;
 
             if (viewerCamera != null)
             {
-                boid.Transform.rotation = viewerCamera.transform.rotation;
+                Transform cameraTransform = viewerCamera.transform;
+                boid.Transform.rotation = directional
+                    ? GetDirectionalBillboardRotation(boid, cameraTransform.forward, cameraTransform.up)
+                    : cameraTransform.rotation;
             }
             else
             {
                 Vector3 fromViewer = boid.Position - viewerPosition;
                 if (fromViewer.sqrMagnitude > 0.001f)
                 {
-                    boid.Transform.rotation = Quaternion.LookRotation(fromViewer.normalized, Vector3.up);
+                    boid.Transform.rotation = directional
+                        ? GetDirectionalBillboardRotation(boid, fromViewer.normalized, Vector3.up)
+                        : Quaternion.LookRotation(fromViewer.normalized, Vector3.up);
                 }
             }
 
@@ -1510,6 +1516,21 @@
             float y = (Mathf.PerlinNoise(seed + 23.73f, t * 0.83f + 19.91f) * 2f - 1f) * 0.28f;
             float z = Mathf.PerlinNoise(seed + 41.19f, t + 37.43f) * 2f - 1f;
             return new Vector3(x, y, z);
+        }
+
+        // The bird icons are drawn head up, so the quad's up axis is turned towards the flight direction as seen from the viewer.
+        private static Quaternion GetDirectionalBillboardRotation(BoidData boid, Vector3 viewForward, Vector3 fallbackUp)
+        {
+            Vector3 screenDirection = Vector3.ProjectOnPlane(boid.Velocity, viewForward);
+
+            // Flying almost straight towards or away from the viewer leaves no clear direction, so keep the current heading.
+            if (screenDirection.sqrMagnitude <= boid.Velocity.sqrMagnitude * 0.01f || screenDirection.sqrMagnitude < 0.0001f)
+            {
+                screenDirection = Vector3.ProjectOnPlane(boid.Transform.up, viewForward);
+                if (screenDirection.sqrMagnitude < 0.0001f) screenDirection = fallbackUp;
+            }
+
+            return Quaternion.LookRotation(viewForward, screenDirection);
         }
 
         private static Vector3 GetPlayerAvoidance(Vector3 boidPosition, Vector3 playerPosition)
