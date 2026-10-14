@@ -500,7 +500,7 @@
             bool boidCountChanged = force || newTargetBoidCount != m_LastAppliedBoidCount;
             bool simulatedCountChanged = force || newTargetSimulatedBoidCount != m_LastAppliedSimulatedBoidCount;
             bool followerTrailLengthChanged = force || Mathf.Abs(newFollowerTrailLength - m_LastAppliedFollowerTrailLength) > 0.01f;
-            bool visualMaterialChanged = force || m_Materials == null || newAnimatedCrows != m_LastAppliedAnimatedCrows;
+            bool visualMaterialChanged = force || m_Materials == null || newAnimatedCrows != m_LastAppliedAnimatedCrows || !AreMaterialsAlive();
             bool behaviorProfileChanged = newBehaviorProfile != m_LastAppliedBehaviorProfile;
 
             m_TargetBoidCount = newTargetBoidCount;
@@ -556,6 +556,19 @@
                 boid.FrameIndex = 0;
                 m_Boids[i] = boid;
             }
+        }
+
+        // Scene loads can unload the materials or textures the mod created, which leaves the crows drawn as black quads.
+        private bool AreMaterialsAlive()
+        {
+            if (m_Materials == null) return false;
+
+            for (int i = 0; i < m_Materials.Length; i++)
+            {
+                if (m_Materials[i] == null || m_Materials[i].mainTexture == null) return false;
+            }
+
+            return true;
         }
 
         private Material GetMaterialForFrame(int frameIndex)
@@ -1579,19 +1592,17 @@
 
         private static Texture2D[] GetAnimatedBirdTextures()
         {
-            if (s_AnimatedBirdTextures != null) return s_AnimatedBirdTextures;
+            s_AnimatedBirdTextures ??= new Texture2D[s_AnimatedBirdTextureResourceNames.Length];
 
-            List<Texture2D> textures = new(s_AnimatedBirdTextureResourceNames.Length);
-
-            for (int i = 0; i < s_AnimatedBirdTextureResourceNames.Length; i++)
+            // Unity's == treats textures destroyed by a scene load as null, so those frames get reloaded.
+            for (int i = 0; i < s_AnimatedBirdTextures.Length; i++)
             {
-                Texture2D texture = LoadEmbeddedTexture(s_AnimatedBirdTextureResourceNames[i], false);
-                if (texture == null) return null;
+                if (s_AnimatedBirdTextures[i] != null) continue;
 
-                textures.Add(texture);
+                s_AnimatedBirdTextures[i] = LoadEmbeddedTexture(s_AnimatedBirdTextureResourceNames[i], false);
+                if (s_AnimatedBirdTextures[i] == null) return null;
             }
 
-            s_AnimatedBirdTextures = textures.ToArray();
             return s_AnimatedBirdTextures;
         }
 
