@@ -194,6 +194,15 @@ namespace Murmurations
         [Slider(0f, 3f, 301, NumberFormat = "{0:0.00}")]
         public float ConfinementSphereStrength = 0.65f;
 
+        [Name("Avoid terrain and objects")]
+        [Description("Crows look ahead and steer around terrain, trees and buildings instead of flying through them. Default: Enabled.")]
+        public bool AvoidObstacles = true;
+
+        [Name("Obstacle clearance")]
+        [Description("How close crows can get to the ground and to objects before they steer away. Default: 25m.")]
+        [Slider(5f, 100f, 96, NumberFormat = "{0:0}m")]
+        public float ObstacleClearance = 25f;
+
         [Name("Maneuver variation strength")]
         [Description("Strength of slow behavior changes used to prevent stable repeated patterns. 0 disables it. Default: 0.9.")]
         [Slider(0f, 3f, 301, NumberFormat = "{0:0.00}")]

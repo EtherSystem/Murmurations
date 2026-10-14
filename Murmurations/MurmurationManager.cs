@@ -390,6 +390,9 @@
         private const float MaxForce = 18f;
         private const float AnchorGroundCheckIntervalSeconds = 1f;
         private const float PlayerAvoidDistance = 80f;
+        private const float ObstacleCheckIntervalSeconds = 0.25f;
+        private const float ObstacleLookAheadSeconds = 2.5f;
+        private const float ObstacleAvoidanceForceMultiplier = 2.5f;
         private const float InitialSpawnHalfSize = 42f;
         private const int DefaultMaxNeighborChecksPerBoid = 24;
         private const int BirdTextureSize = 64;
@@ -920,7 +923,8 @@
                 TrailPositions = isSimulated ? CreateInitialTrail(position) : null,
                 TrailHead = 0,
                 TrailCount = isSimulated ? 1 : 0,
-                LastTrailPosition = position
+                LastTrailPosition = position,
+                AvoidanceCheckTimer = UnityEngine.Random.Range(0f, ObstacleCheckIntervalSeconds)
             };
 
             if (!isSimulated) AssignFollowerLeader(ref boid, index);
@@ -1265,6 +1269,16 @@
             if (m_State == MurmurationLifecycleState.FadingOut) acceleration += SteerToward(boid.Position - m_Anchor + Vector3.up * 0.25f, boid.Velocity) * 0.35f;
             acceleration = Vector3.ClampMagnitude(acceleration, MaxForce);
 
+            // Avoiding terrain and objects overrides the flocking forces, and can turn harder so crows don't swing wide into a hill.
+            UpdateObstacleAvoidance(ref boid, dt);
+            float avoidanceStrength = Mathf.Clamp01(boid.Avoidance.magnitude);
+            if (avoidanceStrength > 0.001f)
+            {
+                Vector3 avoidanceVelocity = boid.Avoidance.normalized * maxSpeed;
+                Vector3 avoidanceForce = Vector3.ClampMagnitude(avoidanceVelocity - boid.Velocity, MaxForce * ObstacleAvoidanceForceMultiplier);
+                acceleration = Vector3.Lerp(acceleration, avoidanceForce, avoidanceStrength);
+            }
+
             boid.Velocity = Vector3.ClampMagnitude(boid.Velocity + acceleration * dt, maxSpeed);
             boid.Position += boid.Velocity * dt;
             RecordLeaderTrailPoint(ref boid);
@@ -1436,6 +1450,55 @@
                 hash = hash * 31 + z;
                 return hash;
             }
+        }
+
+        // Followers trace their leader's path, so only simulated leaders need to check for obstacles.
+        // The result is kept between checks so a crow keeps turning until the next check.
+        private static void UpdateObstacleAvoidance(ref BoidData boid, float dt)
+        {
+            if (Settings.options == null || !Settings.options.AvoidObstacles)
+            {
+                boid.Avoidance = Vector3.zero;
+                return;
+            }
+
+            boid.AvoidanceCheckTimer -= dt;
+            if (boid.AvoidanceCheckTimer > 0f) return;
+
+            boid.AvoidanceCheckTimer = ObstacleCheckIntervalSeconds;
+
+            float clearance = Mathf.Clamp(Settings.options.ObstacleClearance, 5f, 100f);
+            Vector3 avoidance = Vector3.zero;
+
+            // Starting the ray above the crow also catches crows that have already dipped slightly below the surface.
+            if (Physics.Raycast(boid.Position + Vector3.up * clearance, Vector3.down, out RaycastHit groundHit, clearance * 2f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            {
+                float heightAboveGround = boid.Position.y - groundHit.point.y;
+                float urgency = 1f - Mathf.Clamp01(heightAboveGround / clearance);
+                avoidance += (groundHit.normal + Vector3.up).normalized * urgency;
+            }
+
+            float speed = boid.Velocity.magnitude;
+            if (speed > 0.1f)
+            {
+                Vector3 direction = boid.Velocity / speed;
+                float lookAhead = Mathf.Max(clearance * 2f, speed * ObstacleLookAheadSeconds);
+                float probeRadius = clearance * 0.25f;
+
+                if (Physics.SphereCast(boid.Position, probeRadius, direction, out RaycastHit hit, lookAhead, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                {
+                    float urgency = 1f - Mathf.Clamp01((hit.distance - clearance) / Mathf.Max(0.01f, lookAhead - clearance));
+
+                    // Slide along the surface and away from it, preferring to fly over obstacles rather than around them.
+                    Vector3 slide = Vector3.ProjectOnPlane(direction, hit.normal);
+                    Vector3 escape = hit.normal + Vector3.up * 0.5f;
+                    if (slide.sqrMagnitude > 0.01f) escape += slide.normalized;
+
+                    avoidance += escape.normalized * urgency;
+                }
+            }
+
+            boid.Avoidance = Vector3.ClampMagnitude(avoidance, 1f);
         }
 
         private static Vector3 SteerToward(Vector3 desiredDirection, Vector3 currentVelocity)
@@ -1788,5 +1851,7 @@
         public int TrailHead;
         public int TrailCount;
         public Vector3 LastTrailPosition;
+        public Vector3 Avoidance;
+        public float AvoidanceCheckTimer;
     }
 }
