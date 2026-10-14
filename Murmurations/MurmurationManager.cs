@@ -558,7 +558,6 @@
             }
         }
 
-        // Scene loads can unload the materials or textures the mod created, which leaves the crows drawn as black quads.
         private bool AreMaterialsAlive()
         {
             if (m_Materials == null) return false;
@@ -1594,7 +1593,6 @@
         {
             s_AnimatedBirdTextures ??= new Texture2D[s_AnimatedBirdTextureResourceNames.Length];
 
-            // Unity's == treats textures destroyed by a scene load as null, so those frames get reloaded.
             for (int i = 0; i < s_AnimatedBirdTextures.Length; i++)
             {
                 if (s_AnimatedBirdTextures[i] != null) continue;
